@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Installation:
+#   ln -sf ../../scripts/pre-commit.hook .git/hooks/pre-commit
+
+RETURN=0
+
+# get the coding style checking tool
+ASTYLE=$(which astyle)
+
+# check if coding style checking tool is installed
+if [ $? -ne 0 ]; then
+    echo "[!] astyle not installed. Unable to check source file format."
+    exit 1
+fi
+
+# coding style options
+OPTIONS="-r --style=kr --indent=spaces --indent-switches --suffix=none"
+
+# find the modified files
+FILES=`git diff --cached --name-only --diff-filter=ACMR | grep -E "\.(c|cpp|h)$"`
+
+for FILE in $FILES; do
+    $ASTYLE $OPTIONS < $FILE | cmp -s $FILE 
+    if [ $? -ne 0 ]; then
+        echo "[!] $FILE does not follow the coding style."
+        RETURN=1
+    fi
+done
+
+if [ $RETURN -eq 1 ]; then
+    echo "Make sure your coding style is acceptable."
+    echo "Try to run the following command:"
+    echo $ASTYLE $OPTIONS "*.c" "*.h" "*.cpp"
+fi
+
+exit $RETURN
+
